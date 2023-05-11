@@ -20,7 +20,7 @@ class Instructor(models.Model):
     total_learners = models.IntegerField()
 
     def __str__(self):
-        return self.user
+        return self.user.username
 
 
 # Learner model
@@ -48,7 +48,7 @@ class Learner(models.Model):
     social_link = models.URLField(max_length=200)
 
     def __str__(self):
-        return self.user + "," + \
+        return self.user.username + "," + \
                self.occupation
 
 
@@ -94,31 +94,52 @@ class Enrollment(models.Model):
     mode = models.CharField(max_length=5, choices=COURSE_MODES, default=AUDIT)
     rating = models.FloatField(default=5.0)
 
-#Question Model
+
+# <HINT> Create a Question Model with:
 class Question(models.Model):
-    course = models.ManyToManyField('Course')
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    content = models.CharField(blank=False, max_length=300)
-    grade_point = models.ImageField(max_length=25, blank=False )
-    
-    
-    # <HINT> A sample model method to calculate if learner get the score of the question
-    def is_get_score(self, selected_ids):
+    # One-To-Many relationship to Course
+    courses = models.ManyToManyField(Course)
+    # Foreign key to lesson (REMOVED as I wanted to relate questions directly with courses, see task caption)
+    # lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, null=False)
+    # question text
+    question_text = models.CharField(max_length=500, default="This is a sample question.")
+    # question grade/mark
+    marks = models.FloatField(default=1.0)
+
+    # A model method to calculate if learner scored points by answering correctly
+    def answered_correctly(self, selected_ids):
        all_answers = self.choice_set.filter(is_correct=True).count()
        selected_correct = self.choice_set.filter(is_correct=True, id__in=selected_ids).count()
        if all_answers == selected_correct:
            return True
        else:
            return False
+    
+    def __str__(self):
+        return self.question_text
 
 
-#Choice Model
 class Choice(models.Model):
-    question = models.ManyToManyField('Question')
-    content = models.CharField(max_length=255)
-    is_correct = models.BooleanField() 
+    # One-To-Many relationship with Question
+    question = models.ForeignKey(Question, models.SET_NULL, null=True)
+    # Choice content / text
+    choice_text = models.CharField(null=True, max_length=50)
+    # Indicates whether the choice is correct or not
+    is_correct = models.BooleanField(default=True)
 
-#submission model
+    def __str__(self):
+        return self.choice_text
+
+
 class Submission(models.Model):
-   enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
-   chocies = models.ManyToManyField('Choice')
+    # One enrollment could have multiple submission
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
+    # Many-to-Many relationship with choices
+    choices = models.ManyToManyField(Choice)
+    # Time and date metadata
+    date_submitted  = models.DateField(default=now, editable=False)  
+    time = models.TimeField(default=now, editable=False)
+
+    def __str__(self):
+        return f"Submission posted on {self.date_submitted} at {self.time} \
+                for {self.enrollment}"
