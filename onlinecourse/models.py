@@ -77,8 +77,6 @@ class Lesson(models.Model):
 
 
 # Enrollment model
-# <HINT> Once a user enrolled a class, an enrollment entry should be created between the user and course
-# And we could use the enrollment to track information such as exam submissions
 class Enrollment(models.Model):
     AUDIT = 'audit'
     HONOR = 'honor'
@@ -95,15 +93,10 @@ class Enrollment(models.Model):
     rating = models.FloatField(default=5.0)
 
 
-# <HINT> Create a Question Model with:
+#Question Model
 class Question(models.Model):
-    # One-To-Many relationship to Course
     courses = models.ManyToManyField(Course)
-    # Foreign key to lesson (REMOVED as I wanted to relate questions directly with courses, see task caption)
-    # lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, null=False)
-    # question text
     question_text = models.CharField(max_length=500, default="This is a sample question.")
-    # question grade/mark
     marks = models.FloatField(default=1.0)
 
     # A model method to calculate if learner scored points by answering correctly
@@ -118,25 +111,19 @@ class Question(models.Model):
     def __str__(self):
         return self.question_text
 
-
+#Choice Model
 class Choice(models.Model):
-    # One-To-Many relationship with Question
     question = models.ForeignKey(Question, models.SET_NULL, null=True)
-    # Choice content / text
     choice_text = models.CharField(null=True, max_length=50)
-    # Indicates whether the choice is correct or not
     is_correct = models.BooleanField(default=True)
-
+    
     def __str__(self):
         return self.choice_text
 
-
+#Submission Model
 class Submission(models.Model):
-    # One enrollment could have multiple submission
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
-    # Many-to-Many relationship with choices
     choices = models.ManyToManyField(Choice)
-    # Time and date metadata
     date_submitted  = models.DateField(default=now, editable=False)  
     time = models.TimeField(default=now, editable=False)
 
